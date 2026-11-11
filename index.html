@@ -355,7 +355,6 @@ footer .giant{margin-top:24px;font-size:clamp(80px,16vw,220px);height:.78em;over
 .chips button{transition:background .3s,border-color .3s,color .3s,transform .35s var(--e)}
 .chips button:active{transform:scale(.95)}
 .chips button[aria-pressed="true"]{animation:popIn .45s var(--e)}
-@media (prefers-reduced-motion:reduce){.progress{display:none}.reveal.pre .st,.reveal.pre .giant{opacity:1;translate:none;scale:none}.svc .inner{opacity:1;translate:none}}
 
 /* video loading */
 .vwrap{position:relative;display:grid;place-items:center}
@@ -371,8 +370,8 @@ footer .giant{margin-top:24px;font-size:clamp(80px,16vw,220px);height:.78em;over
 .lb .lcap{font-size:14px;font-weight:600;padding:0 10px;max-width:50vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .reveal{transition:opacity .9s,transform .9s cubic-bezier(.2,.8,.2,1)}
+.boot .reveal,.boot .st,.boot .reveal .giant{transition:none!important}
 .reveal.pre{opacity:.001;transform:translateY(28px)}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal.pre{opacity:1;transform:none}.soft.pre .ring .pg{stroke-dashoffset:calc(226.2 * (1 - var(--v)))}.soft.pre .ring .tip{transform:rotate(calc(var(--v) * 360deg))}}
 </style>
 </head>
 <body>
@@ -699,19 +698,22 @@ waLink();
 setFilter("all");
 if("IntersectionObserver" in window){new IntersectionObserver(es=>es.forEach(en=>{flowNear=en.isIntersecting;layout()}),{rootMargin:"400px 0px"}).observe(flow)}else{flowNear=true;layout()}
 
-/* reveal + skill bars */
-if("IntersectionObserver" in window&&!matchMedia("(prefers-reduced-motion:reduce)").matches){
-  const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.remove("pre");io.unobserve(en.target)}}),{threshold:.06});
-  document.querySelectorAll(".reveal").forEach(el=>{if(el.getBoundingClientRect().top>innerHeight){el.classList.add("pre");io.observe(el)}});
-  const ringIO=new IntersectionObserver(es=>es.forEach(en=>en.target.classList.toggle("pre",!en.isIntersecting)),{threshold:.25});
-  ringIO.observe($("#soft"));
-}else $("#soft").classList.remove("pre");
 
 /* ===== motion: stagger, scroll effects, magnetic buttons ===== */
 const stag=(sel,step=1)=>document.querySelectorAll(sel).forEach((el,i)=>{el.classList.add("st");el.style.setProperty("--d",i*step)});
 stag("#arc .cat");stag("#svc .svc");stag("#skills .sk");stag(".favs .fav");stag(".socials .soc");stag(".cats-head > *");
 document.querySelectorAll("#arc .cat").forEach((c,i)=>c.style.setProperty("--fx",((2.5-i)*70)+"px"));
 document.querySelectorAll(".chip-w, h2.title").forEach(el=>{if(el.closest(".reveal")&&!el.classList.contains("st")){el.classList.add("st");el.style.setProperty("--d",el.tagName==="H2"?1:0)}});
+
+/* reveal: hide sections without transition, paint, then animate each one in as it enters view */
+if("IntersectionObserver" in window){
+  const root=document.documentElement;root.classList.add("boot");
+  document.querySelectorAll(".reveal").forEach(el=>{if(el.getBoundingClientRect().bottom>0)el.classList.add("pre")});
+  const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.remove("pre");io.unobserve(en.target)}}),{threshold:.06});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{root.classList.remove("boot");setTimeout(()=>document.querySelectorAll(".reveal.pre").forEach(el=>io.observe(el)),250)}));
+  const ringIO=new IntersectionObserver(es=>es.forEach(en=>en.target.classList.toggle("pre",!en.isIntersecting)),{threshold:.25});
+  ringIO.observe($("#soft"));
+}else $("#soft").classList.remove("pre");
 
 const navEl=document.querySelector(".nav"),prog=$("#progress"),giants=[...document.querySelectorAll(".giant")],shot=document.querySelector(".shot");
 const links=[...document.querySelectorAll(".nav .links a")],secs=links.map(a=>document.querySelector(a.getAttribute("href"))).filter(Boolean);
